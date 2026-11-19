@@ -42,6 +42,7 @@ Phần A của [hướng dẫn đề tài](HUONG_DAN_DE_TAI.md) xác định ph�
 
 - Thực hiện upload theo mock đã duyệt, xác thực định dạng và giới hạn file, chia đoạn khi cần và tổng hợp thành một transcript cuối. Theo dõi trạng thái job, timeout và lỗi quota. Chạy lại hoặc upload lại có chủ đích theo quy tắc đã duyệt.
 - **Nghiệm thu** bằng một file mô phỏng khoảng 10 phút có transcript cuối, trạng thái và bản ghi lượt gọi AI. Demo file lỗi, lỗi 429 mô phỏng, và yêu cầu lặp mà không tạo kết quả trùng.
+- **Kết quả để duyệt.** Ca `demo-phase4-10min` đã chạy trên Azure STT, lưu một transcript cuối từ 5 đoạn và ghi 5 lượt gọi trong `ai_runs`. Kiểm thử tích hợp mô phỏng `429`, giữ đoạn đã xong, tiếp tục đúng đoạn và xác nhận gửi lặp chỉ có một job. Đã kiểm tra tải tệp lỗi và tải tệp hợp lệ qua giao diện trên màn hình hẹp. [Hướng dẫn chạy thử](../README.md#phase-4--tải-audio-và-chép-lời).
 
 ## Phase 5 — SOAP, gợi ý ICD và bác sĩ xác nhận
 

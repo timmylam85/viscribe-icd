@@ -21,6 +21,19 @@ class Settings(BaseSettings):
         default_factory=dict, validation_alias="VISCRIBE_DEV_USERS"
     )
 
+    audio_max_bytes: int = Field(
+        64 * 1024 * 1024, ge=1, le=128 * 1024 * 1024, validation_alias="VISCRIBE_AUDIO_MAX_BYTES"
+    )
+    audio_max_seconds: int = Field(
+        1800, ge=1, le=7200, validation_alias="VISCRIBE_AUDIO_MAX_SECONDS"
+    )
+    stt_chunk_seconds: int = Field(
+        120, ge=10, le=300, validation_alias="VISCRIBE_STT_CHUNK_SECONDS"
+    )
+    stt_min_interval_seconds: float = Field(
+        6.2, ge=0, le=60, validation_alias="VISCRIBE_STT_MIN_INTERVAL_SECONDS"
+    )
+
     azure_openai_endpoint: str = ""
     azure_openai_api_key: SecretStr = SecretStr("")
     azure_openai_chat_luna: str = "gpt-5.6-luna-1"

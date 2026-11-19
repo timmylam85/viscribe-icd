@@ -231,3 +231,7 @@ __marimo__/
 *.webm
 *.aiff
 viscribe-data/raw/
+
+# ViScribe web dependencies and build output
+viscribe-web/node_modules/
+viscribe-web/dist/

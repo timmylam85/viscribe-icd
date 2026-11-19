@@ -1,19 +1,11 @@
-import os
 from pathlib import Path
-from uuid import uuid4
 
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, func, select
-from sqlalchemy.engine import make_url
-from sqlalchemy.schema import CreateSchema, DropSchema
+from sqlalchemy import func, select
 
 from viscribe_api.azure_clients import AzureCallError, Result
-from viscribe_api.catalog import CatalogError, import_release, read_catalog
-from viscribe_api.config import Settings
-from viscribe_api.db import make_session_factory
-from viscribe_api.main import create_app
-from viscribe_api.models import EMBEDDING_DIMENSIONS, AIRun, Base, ICDCode, ICDCodeEmbedding
+from viscribe_api.catalog import CatalogError, import_release
+from viscribe_api.models import EMBEDDING_DIMENSIONS, AIRun, ICDCode, ICDCodeEmbedding
 
 CATALOG = Path(__file__).resolve().parents[2] / "viscribe-data/fixtures/icd10-who2019-demo.csv"
 VERSION = "demo-test-v1"
@@ -22,40 +14,8 @@ ALICE = {"Authorization": f"Bearer {'a' * 32}"}
 BOB = {"Authorization": f"Bearer {'b' * 32}"}
 
 
-@pytest.fixture
-def phase3():
-    database_url = os.environ.get("VISCRIBE_TEST_DATABASE_URL")
-    if not database_url:
-        pytest.skip("Set VISCRIBE_TEST_DATABASE_URL to a local PostgreSQL with pgvector")
-    engine = create_engine(database_url)
-    schema = f"test_phase3_{uuid4().hex[:12]}"
-    with engine.begin() as connection:
-        connection.execute(CreateSchema(schema))
-        connection.exec_driver_sql(f"SET LOCAL search_path TO {schema}, public")
-        Base.metadata.create_all(connection, checkfirst=False)
-    test_url = make_url(database_url).update_query_dict(
-        {"options": f"-csearch_path={schema},public"}
-    )
-    settings = Settings(
-        VISCRIBE_DATABASE_URL=test_url.render_as_string(hide_password=False),
-        VISCRIBE_ICD_CATALOG_VERSION=VERSION,
-        VISCRIBE_DEV_USERS={"doctor-a": "a" * 32, "doctor-b": "b" * 32},
-    )
-    sessions = make_session_factory(settings)
-    try:
-        rows = read_catalog(CATALOG)
-        assert import_release(sessions, rows, VERSION, SOURCE)
-        with TestClient(create_app(settings)) as client:
-            yield client, sessions, rows
-    finally:
-        sessions.kw["bind"].dispose()
-        with engine.begin() as connection:
-            connection.execute(DropSchema(schema, cascade=True))
-        engine.dispose()
-
-
-def test_catalog_import_is_idempotent_and_version_is_immutable(phase3):
-    _, sessions, rows = phase3
+def test_catalog_import_is_idempotent_and_version_is_immutable(test_api):
+    _, sessions, rows = test_api
     assert not import_release(sessions, rows, VERSION, SOURCE)
     with pytest.raises(CatalogError, match="already has a different"):
         import_release(sessions, rows[:-1], VERSION, SOURCE)
@@ -63,8 +23,8 @@ def test_catalog_import_is_idempotent_and_version_is_immutable(phase3):
         assert session.scalar(select(func.count()).select_from(ICDCode)) == len(rows)
 
 
-def test_lookup_by_code_and_vietnamese_title(phase3):
-    client, _, _ = phase3
+def test_lookup_by_code_and_vietnamese_title(test_api):
+    client, _, _ = test_api
     assert client.get("/health").json() == {"status": "ok"}
     for query in ("viêm họng", "viem hong", "J02", "j029"):
         response = client.get("/icd/search", params={"q": query}, headers=ALICE)
@@ -76,8 +36,8 @@ def test_lookup_by_code_and_vietnamese_title(phase3):
     assert client.get("/icd/search", params={"q": "Z99.9"}, headers=ALICE).json()["items"] == []
 
 
-def test_only_owner_can_list_or_open_encounter(phase3):
-    client, _, _ = phase3
+def test_only_owner_can_list_or_open_encounter(test_api):
+    client, _, _ = test_api
     assert client.get("/encounters").status_code == 401
     response = client.post(
         "/encounters", headers=ALICE, json={"mode": "silent", "patientRef": "demo-01"}
@@ -98,8 +58,8 @@ def test_only_owner_can_list_or_open_encounter(phase3):
     )
 
 
-def test_similarity_uses_pgvector_when_keyword_search_has_no_match(phase3, monkeypatch):
-    client, sessions, _ = phase3
+def test_similarity_uses_pgvector_when_keyword_search_has_no_match(test_api, monkeypatch):
+    client, sessions, _ = test_api
     azure = client.app.state.azure
     embedding_a = [1.0, 0.0] + [0.0] * (EMBEDDING_DIMENSIONS - 2)
     embedding_b = [0.0, 1.0] + [0.0] * (EMBEDDING_DIMENSIONS - 2)
@@ -121,8 +81,8 @@ def test_similarity_uses_pgvector_when_keyword_search_has_no_match(phase3, monke
     assert [item["code"] for item in result.json()["items"]] == ["J02.9", "J00"]
 
 
-def test_azure_retry_audits_each_attempt(phase3, monkeypatch):
-    client, sessions, _ = phase3
+def test_azure_retry_audits_each_attempt(test_api, monkeypatch):
+    client, sessions, _ = test_api
     waits = []
     monkeypatch.setattr("viscribe_api.azure_clients.time.sleep", waits.append)
     outcomes = iter([AzureCallError("http_429", transient=True, retry_after=3), Result("ok", 2, 1)])

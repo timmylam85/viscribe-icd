@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
+from uuid import UUID
 
 from openai import APIConnectionError, APIStatusError, AzureOpenAI, OpenAI
 from sqlalchemy.orm import Session, sessionmaker
@@ -98,13 +99,24 @@ class AzureGateway:
     def chat_configured(self) -> bool:
         return self.chat is not None
 
+    @property
+    def file_stt_configured(self) -> bool:
+        return self.stt is not None
+
     def close(self) -> None:
         for client in (self.chat, self.stt):
             if client is not None:
                 client.close()
 
     def invoke[T](
-        self, operation: str, deployment: str, call: Callable[[], Result[T]], *, attempts: int = 3
+        self,
+        operation: str,
+        deployment: str,
+        call: Callable[[], Result[T]],
+        *,
+        attempts: int = 3,
+        encounter_id: UUID | None = None,
+        attempt_start: int = 1,
     ) -> T:
         for attempt in range(1, attempts + 1):
             start = time.monotonic()
@@ -122,13 +134,27 @@ class AzureGateway:
                 TypeError,
             ) as error:
                 failure = call_error(error)
-                self.record(operation, deployment, attempt, start, error=failure)
+                self.record(
+                    operation,
+                    deployment,
+                    attempt_start + attempt - 1,
+                    start,
+                    error=failure,
+                    encounter_id=encounter_id,
+                )
                 # Leave longer cooldowns to the caller rather than block a command or API request.
                 if not failure.transient or attempt == attempts or failure.retry_after > 30:
                     raise failure from None
                 time.sleep(max(failure.retry_after, 2 ** (attempt - 1) + random.random()))
             else:
-                self.record(operation, deployment, attempt, start, result=result)
+                self.record(
+                    operation,
+                    deployment,
+                    attempt_start + attempt - 1,
+                    start,
+                    result=result,
+                    encounter_id=encounter_id,
+                )
                 return result.value
         raise ValueError("attempts must be positive")
 
@@ -141,11 +167,13 @@ class AzureGateway:
         *,
         result: Result | None = None,
         error: AzureCallError | None = None,
+        encounter_id: UUID | None = None,
     ) -> None:
         elapsed_ms = round((time.monotonic() - start) * 1000)
         with self.sessions.begin() as session:
             session.add(
                 AIRun(
+                    encounter_id=encounter_id,
                     operation=operation,
                     deployment=deployment,
                     attempt=attempt,
@@ -222,25 +250,44 @@ class AzureGateway:
         self.invoke("smoke_chat", deployment, request, attempts=1)
 
     def check_file_stt(self, audio: bytes) -> None:
+        self.transcribe_file(audio, require_text=True, operation="smoke_file_stt")
+
+    def transcribe_file(
+        self,
+        audio: bytes,
+        *,
+        encounter_id: UUID | None = None,
+        attempt: int = 1,
+        require_text: bool = False,
+        operation: str = "transcribe_file",
+    ) -> str:
         if self.stt is None:
             raise AzureCallError("file_stt_resource_not_configured")
         client = self.stt
         deployment = self.settings.azure_stt_transcribe
 
-        def request() -> Result[None]:
+        def request() -> Result[str]:
             response = client.audio.transcriptions.create(
                 model=deployment,
                 file=("synthetic.wav", audio, "audio/wav"),
                 language="vi",
             )
-            if not response.text.strip():
+            text = response.text.strip()
+            if require_text and not text:
                 raise AzureCallError("empty_file_transcript")
             usage = response.usage
             return Result(
-                None, getattr(usage, "input_tokens", None), getattr(usage, "output_tokens", None)
+                text, getattr(usage, "input_tokens", None), getattr(usage, "output_tokens", None)
             )
 
-        self.invoke("smoke_file_stt", deployment, request, attempts=1)
+        return self.invoke(
+            operation,
+            deployment,
+            request,
+            attempts=1,
+            encounter_id=encounter_id,
+            attempt_start=attempt,
+        )
 
     def check_realtime_stt(self, pcm: bytes) -> None:
         url = self.settings.azure_stt_realtime_url

@@ -50,3 +50,27 @@ uv run --project viscribe-api --locked python -m viscribe_api.smoke_azure --audi
 ```
 
 Lệnh thử mỗi deployment một lần, kiểm tra structured output của Luna và ghi kết quả, độ trễ, token nếu có vào `ai_runs`. Kết quả terminal chỉ gồm tên deployment và trạng thái.
+
+## Phase 4 · Tải audio và chép lời
+
+Cần `ffmpeg`, `ffprobe` và Node.js 22. Sau khi dựng PostgreSQL và nạp danh mục mẫu theo hướng dẫn trên, chạy migration mới rồi khởi động API, worker và web ở các Terminal riêng.
+
+```sh
+uv run --project viscribe-api --locked alembic -c viscribe-api/alembic.ini upgrade head
+uv run --project viscribe-api --locked uvicorn viscribe_api.main:app --host 127.0.0.1 --port 8000
+```
+
+```sh
+uv run --project viscribe-api --locked python -m viscribe_api.transcription_worker
+```
+
+```sh
+npm --prefix viscribe-web ci
+npm --prefix viscribe-web run dev
+```
+
+Worker dùng `AZURE_STT_ENDPOINT`, `AZURE_STT_API_KEY` và `AZURE_STT_API_VERSION` trong cấu hình backend. Mở [ViScribe local](http://127.0.0.1:5173/), dùng giá trị của `doctor-local` trong `VISCRIBE_DEV_USERS` của `.env`, tạo buổi khám rồi chọn bản ghi mô phỏng. Giao diện hiển thị tiến độ từng phần và transcript cuối khi hoàn tất. Swagger có các thao tác tải file, xếp hàng, xem trạng thái và thử lại.
+
+Mặc định hỗ trợ WAV, MP3, M4A, MP4 hoặc WebM có audio, tối đa 64 MiB và 30 phút. Worker chuẩn hóa thành WAV PCM16 mono 16 kHz, chia đoạn tối đa 120 giây và ghép theo thứ tự. Mốc thời gian trong giao diện là ranh giới đoạn cắt. Bản ghi và transcript của ca mô phỏng được lưu trong PostgreSQL local, gắn với phiên bản upload và giới hạn theo chủ sở hữu ca.
+
+Khi Azure trả `429` hoặc gặp lỗi kết nối tạm thời, worker lên lịch thử lại và giữ các đoạn đã lưu. Hàng đợi PostgreSQL cho phép worker tiếp tục sau khi khởi động lại. Giới hạn mặc định giữa hai lần gọi STT là 6,2 giây cho mỗi deployment. Các lần gửi lại cùng file hiện tại dùng lại dữ liệu và job đã có. Nếu tải file khác, kết quả cũ được giữ theo phiên bản và màn hình dùng file mới.

@@ -10,10 +10,12 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    LargeBinary,
     Text,
+    UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 EMBEDDING_DIMENSIONS = 1536
@@ -110,3 +112,63 @@ class AIRun(Base):
     tokens_in: Mapped[int | None] = mapped_column(Integer)
     tokens_out: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AudioFile(Base):
+    __tablename__ = "audio_files"
+    __table_args__ = (UniqueConstraint("encounter_id", "revision", name="uq_audio_revision"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    encounter_id: Mapped[UUID] = mapped_column(ForeignKey("encounters.id"))
+    revision: Mapped[int] = mapped_column(Integer)
+    format: Mapped[str] = mapped_column(Text)
+    duration_ms: Mapped[int] = mapped_column(Integer)
+    size_bytes: Mapped[int] = mapped_column(Integer)
+    sha256: Mapped[str] = mapped_column(Text)
+    content: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
+
+
+class TranscriptionJob(Base):
+    __tablename__ = "transcription_jobs"
+    __table_args__ = (
+        Index("ix_transcription_jobs_due", "status", "available_at", "id"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'succeeded', 'failed', 'superseded')",
+            name="ck_transcription_job_status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    audio_id: Mapped[UUID] = mapped_column(ForeignKey("audio_files.id"), unique=True)
+    status: Mapped[str] = mapped_column(Text, default="queued")
+    attempt: Mapped[int] = mapped_column(Integer, default=0)
+    failures: Mapped[int] = mapped_column(Integer, default=0)
+    error_code: Mapped[str | None] = mapped_column(Text)
+    retryable: Mapped[bool] = mapped_column(Boolean, default=False)
+    available_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    lease_token: Mapped[UUID | None]
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    chunk_seconds: Mapped[int] = mapped_column(Integer)
+    parts: Mapped[list[dict]] = mapped_column(JSONB, default=list)
+    parts_done: Mapped[int] = mapped_column(Integer, default=0)
+    parts_total: Mapped[int | None] = mapped_column(Integer)
+
+
+class Transcript(Base):
+    __tablename__ = "transcripts"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    audio_id: Mapped[UUID] = mapped_column(ForeignKey("audio_files.id"), unique=True)
+    kind: Mapped[str] = mapped_column(Text, default="final")
+    text: Mapped[str] = mapped_column(Text)
+    segments: Mapped[list[dict]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class STTRateLimit(Base):
+    __tablename__ = "stt_rate_limits"
+
+    deployment: Mapped[str] = mapped_column(Text, primary_key=True)
+    next_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
