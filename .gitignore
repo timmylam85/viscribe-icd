@@ -221,3 +221,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ViScribe local configuration and recordings
+.env.*
+!.env.example
+.DS_Store
+*.wav
+*.mp3
+*.webm
+*.aiff
+viscribe-data/raw/

@@ -1,0 +1,9 @@
+code,title_vi,title_en,chapter,block,synonyms,selectable
+J00,Viêm mũi họng cấp,Acute nasopharyngitis,X,J00-J06,cảm lạnh,true
+J01.9,"Viêm xoang cấp, không đặc hiệu","Acute sinusitis, unspecified",X,J00-J06,,true
+J02,Viêm họng cấp,Acute pharyngitis,X,J00-J06,,false
+J02.0,Viêm họng do liên cầu,Streptococcal pharyngitis,X,J00-J06,viêm họng cấp do liên cầu,true
+J02.8,Viêm họng cấp do tác nhân xác định khác,Acute pharyngitis due to other specified organisms,X,J00-J06,,true
+J02.9,"Viêm họng cấp, không đặc hiệu","Acute pharyngitis, unspecified",X,J00-J06,,true
+J03.9,"Viêm amidan cấp, không đặc hiệu","Acute tonsillitis, unspecified",X,J00-J06,,true
+J06.9,"Nhiễm trùng đường hô hấp trên cấp, không đặc hiệu","Acute upper respiratory infection, unspecified",X,J00-J06,,true

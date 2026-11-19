@@ -1,0 +1,19 @@
+services:
+  db:
+    image: pgvector/pgvector:0.8.2-pg16
+    environment:
+      POSTGRES_DB: viscribe
+      POSTGRES_USER: viscribe
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U viscribe -d viscribe"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  postgres:
