@@ -1,0 +1,82 @@
+{
+  "workspace": {
+    "pageTitle": "ViScribe ICD · Buổi khám",
+    "simulatedData": "Dữ liệu mô phỏng",
+    "changeAccessCode": "Đổi mã truy cập"
+  },
+  "login": {
+    "title": "Mở buổi khám",
+    "accessCode": "Mã truy cập môi trường thử nghiệm",
+    "checking": "Đang kiểm tra…",
+    "continue": "Tiếp tục"
+  },
+  "encounters": {
+    "title": "Buổi khám",
+    "outpatient": "Khám ngoại trú",
+    "caseTitle": "Buổi khám {reference}",
+    "create": "Tạo buổi khám",
+    "newCase": "Buổi khám mới",
+    "reference": "Mã tham chiếu mô phỏng",
+    "referenceExample": "Ví dụ demo-01",
+    "mode": "Chế độ",
+    "cancel": "Huỷ",
+    "listLabel": "Danh sách buổi khám",
+    "loading": "Đang tải buổi khám…",
+    "empty": "Chưa có buổi khám. Tạo một ca để tải audio.",
+    "open": "Mở buổi khám",
+    "openCaseLabel": "Mở {title}"
+  },
+  "modes": {
+    "assisted": "Có hỗ trợ AI",
+    "silent": "Chế độ ngầm"
+  },
+  "encounterStatuses": {
+    "created": "Chưa có audio",
+    "audio_ready": "Đã tải audio",
+    "transcribing": "Đang chép lời",
+    "transcript_ready": "Có transcript cuối"
+  },
+  "transcription": {
+    "title": "Transcript",
+    "failedTitle": "Chép lời chưa hoàn tất",
+    "failedStatus": "Chép lời gặp lỗi",
+    "retry": "Thử lại",
+    "running": "Đang chép lời",
+    "waitingForRetry": "Đang chờ tự động thử lại",
+    "waitingForWorker": "Đang chờ worker",
+    "progressLabel": "Số phần đã xử lý",
+    "progressCount": "{done}/{total} phần đã xử lý",
+    "audioRequired": "Chọn một tệp âm thanh.",
+    "audioTitle": "Tệp âm thanh",
+    "selectRecording": "Chọn bản ghi mô phỏng",
+    "supportedFormats": "WAV, MP3, M4A, MP4 hoặc WebM.",
+    "selectFile": "Chọn tệp âm thanh",
+    "uploading": "Đang tải lên…",
+    "uploadAndTranscribe": "Tải lên và chép lời",
+    "savedAudio": "Đã lưu tệp {format}",
+    "start": "Bắt đầu chép lời",
+    "final": "Bản cuối",
+    "empty": "Transcript cuối sẽ xuất hiện sau khi chép lời hoàn tất."
+  },
+  "errors": {
+    "Authentication required": "Mã truy cập không hợp lệ.",
+    "Encounter not found": "Không tìm thấy buổi khám trong tài khoản này.",
+    "ICD-10 catalog has not been loaded": "Cần nạp danh mục mẫu trước khi tạo buổi khám.",
+    "audio_too_large": "Tệp vượt quá giới hạn dung lượng.",
+    "audio_too_long": "Tệp vượt quá giới hạn thời lượng.",
+    "audio_too_short": "Bản ghi quá ngắn.",
+    "unsupported_audio_format": "Chọn tệp WAV, MP3, M4A, MP4 hoặc WebM.",
+    "empty_audio": "Tệp âm thanh trống.",
+    "invalid_audio": "Không đọc được âm thanh. Hãy chọn một tệp khác.",
+    "audio_decode_timeout": "Không thể đọc âm thanh trong thời gian cho phép.",
+    "audio_version_changed": "Tệp âm thanh đã được thay thế. Hãy tải lại buổi khám.",
+    "media_tool_unavailable": "Máy chủ chưa có công cụ đọc âm thanh.",
+    "file_stt_resource_not_configured": "Worker chưa được cấu hình Azure STT.",
+    "no_speech_detected": "Không tìm thấy lời nói trong bản ghi.",
+    "http_429": "Dịch vụ chép lời đang giới hạn số lượt gọi.",
+    "connection_or_timeout": "Kết nối dịch vụ chép lời bị gián đoạn.",
+    "worker_timeout": "Worker bị gián đoạn trước khi xử lý xong.",
+    "job_not_retryable": "Hãy chọn tệp âm thanh khác để thử lại."
+  },
+  "fallbackError": "Có lỗi khi xử lý yêu cầu. Vui lòng thử lại."
+}

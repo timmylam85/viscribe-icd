@@ -36,13 +36,13 @@ Phần A của [hướng dẫn đề tài](HUONG_DAN_DE_TAI.md) xác định ph�
 - Dựa trên kiểm kê source, giữ phần dùng được. Phương án từ tài liệu là FastAPI, PostgreSQL/pgvector và React + TypeScript. Thiết lập môi trường local, migration, cấu hình backend, quyền truy cập theo ca và mẫu `.env.example`.
 - Xây bộ nạp danh mục theo phiên bản, hỗ trợ chạy lại, kiểm tra mã trùng và nguồn dữ liệu quy tắc, sau đó tạo embedding và triển khai API tìm mã theo tên hoặc mã. Chạy smoke test hữu hạn bằng dữ liệu giả trên 5 deployment HIVN khi có quyền truy cập.
 - **Nghiệm thu** khi môi trường dựng lại được, nạp lại không sinh mã trùng, tìm được mã mẫu đã xác minh trong top 5, và có kết quả riêng cho từng deployment. Danh mục fixture có thể dùng để dev trong lúc chờ file chính thức. Nghiệm thu danh mục dùng cho nghiên cứu dựa trên file đã chốt.
-- **Kết quả để duyệt.** Migration đã chạy trên PostgreSQL 16 với pgvector. Danh mục mẫu có 8 mã, trong đó 7 mã có thể chọn và đã có embedding. Chạy lại giữ nguyên dữ liệu. Tra “viêm họng” trả mã `J02.9` trong top 5. Đã xác minh quyền truy cập theo bác sĩ, 10 kiểm thử tự động đạt và cả 5 deployment HIVN chạy thành công với dữ liệu mô phỏng. [Hướng dẫn chạy thử](../README.md#phase-3--chạy-môi-trường-phát-triển).
+- **Kết quả để duyệt.** Migration đã chạy trên PostgreSQL 16 với pgvector. Danh mục mẫu có 8 mã, trong đó 7 mã có thể chọn và đã có embedding. Chạy lại giữ nguyên dữ liệu. Tra “viêm họng” trả mã `J02.9` trong top 5. Đã xác minh quyền truy cập theo bác sĩ, 10 kiểm thử tự động đạt và cả 5 deployment HIVN chạy thành công với dữ liệu mô phỏng. [Hướng dẫn chạy thử](../README.md#phase-3-local-development).
 
 ## Phase 4 — Upload và chép lời từ file
 
 - Thực hiện upload theo mock đã duyệt, xác thực định dạng và giới hạn file, chia đoạn khi cần và tổng hợp thành một transcript cuối. Theo dõi trạng thái job, timeout và lỗi quota. Chạy lại hoặc upload lại có chủ đích theo quy tắc đã duyệt.
 - **Nghiệm thu** bằng một file mô phỏng khoảng 10 phút có transcript cuối, trạng thái và bản ghi lượt gọi AI. Demo file lỗi, lỗi 429 mô phỏng, và yêu cầu lặp mà không tạo kết quả trùng.
-- **Kết quả để duyệt.** Ca `demo-phase4-10min` đã chạy trên Azure STT, lưu một transcript cuối từ 5 đoạn và ghi 5 lượt gọi trong `ai_runs`. Kiểm thử tích hợp mô phỏng `429`, giữ đoạn đã xong, tiếp tục đúng đoạn và xác nhận gửi lặp chỉ có một job. Đã kiểm tra tải tệp lỗi và tải tệp hợp lệ qua giao diện trên màn hình hẹp. [Hướng dẫn chạy thử](../README.md#phase-4--tải-audio-và-chép-lời).
+- **Kết quả để duyệt.** Ca `demo-phase4-10min` đã chạy trên Azure STT, lưu một transcript cuối từ 5 đoạn và ghi 5 lượt gọi trong `ai_runs`. Kiểm thử tích hợp mô phỏng `429`, giữ đoạn đã xong, tiếp tục đúng đoạn và xác nhận gửi lặp chỉ có một job. Đã kiểm tra tải tệp lỗi và tải tệp hợp lệ qua giao diện trên màn hình hẹp. [Hướng dẫn chạy thử](../README.md#phase-4-audio-upload-and-transcription).
 
 ## Phase 5 — SOAP, gợi ý ICD và bác sĩ xác nhận
 
